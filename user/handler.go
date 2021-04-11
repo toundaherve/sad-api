@@ -30,13 +30,7 @@ func (h *UserHandler) CreateUser(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
 
 	if err := h.Validate.Struct(&newUser); err != nil {
-		validationErrors := map[string]string{}
-		for _, v := range err.(validator.ValidationErrors) {
-			validationErrors[v.Field()] = v.Tag()
-		}
-
-		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode(validationErrors)
+		respondValidationError(w, err.(validator.ValidationErrors))
 		return
 	}
 
@@ -55,6 +49,24 @@ func (h *UserHandler) CreateUser(w http.ResponseWriter, r *http.Request) {
 	}
 
 	respondCreated(w, "Your account has been successfully created.")
+}
+
+type validationErrorResponse struct {
+	Code   int               `json:"code"`
+	Errors map[string]string `json:"errors"`
+}
+
+func respondValidationError(w http.ResponseWriter, vErrors validator.ValidationErrors) {
+	formatted := map[string]string{}
+	for _, v := range vErrors {
+		formatted[v.Field()] = v.Tag()
+	}
+	w.WriteHeader(http.StatusBadRequest)
+	resp := validationErrorResponse{
+		Code:   http.StatusBadRequest,
+		Errors: formatted,
+	}
+	json.NewEncoder(w).Encode(resp)
 }
 
 type response struct {
