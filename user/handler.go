@@ -6,18 +6,21 @@ import (
 	"net/http"
 
 	"github.com/go-playground/validator"
+	"github.com/sirupsen/logrus"
 	"golang.org/x/crypto/bcrypt"
 )
 
 type UserHandler struct {
 	Validate *validator.Validate
 	Storage  Storage
+	logger   *logrus.Logger
 }
 
-func NewUserHandler(v *validator.Validate, s Storage) *UserHandler {
+func NewUserHandler(v *validator.Validate, s Storage, l *logrus.Logger) *UserHandler {
 	return &UserHandler{
 		Validate: v,
 		Storage:  s,
+		logger:   l,
 	}
 }
 
@@ -37,14 +40,20 @@ func (h *UserHandler) CreateUser(w http.ResponseWriter, r *http.Request) {
 	hash, err := bcrypt.GenerateFromPassword([]byte(newUser.Password), 14)
 	if err != nil {
 		respondInternalServerError(w)
-		log.Printf("An error occured while hashing user password: %s\n", err)
+		h.logger.WithFields(logrus.Fields{
+			"password": newUser.Password,
+			"err":      err.Error(),
+		}).Warn("Failed to create password hash")
 		return
 	}
 	newUser.Password = string(hash)
 
 	if err := h.Storage.CreateUser(&newUser); err != nil {
 		respondInternalServerError(w)
-		log.Printf("An error occured while creating a new user in the storage: %s\n", err.Error())
+		h.logger.WithFields(logrus.Fields{
+			"user": newUser.Email,
+			"err":  err.Error(),
+		}).Warn("Failed to create new user in the storage")
 		return
 	}
 
