@@ -30,21 +30,27 @@ func (h *UserHandler) CreateUser(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
 
 	if err := h.Validate.Struct(&newUser); err != nil {
-		respondBadRequest(w, err.Error())
+		validationErrors := map[string]string{}
+		for _, v := range err.(validator.ValidationErrors) {
+			validationErrors[v.Field()] = v.Tag()
+		}
+
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(validationErrors)
 		return
 	}
 
 	hash, err := bcrypt.GenerateFromPassword([]byte(newUser.Password), 14)
 	if err != nil {
 		respondInternalServerError(w)
-		log.Println(err)
+		log.Printf("An error occured while hashing user password: %s\n", err)
 		return
 	}
 	newUser.Password = string(hash)
 
 	if err := h.Storage.CreateUser(&newUser); err != nil {
 		respondInternalServerError(w)
-		log.Println(err)
+		log.Printf("An error occured while creating a new user in the storage: %s\n", err.Error())
 		return
 	}
 

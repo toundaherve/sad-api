@@ -11,6 +11,9 @@ func NewPostgresDB() *PostgresDB {
 }
 
 func (p *PostgresDB) CreateUser(u *user.User) error {
+	// if err != nil {
+	//	return errors.Wrap(err, "Something happened while creating the user")
+	// }
 	return nil
 }
 
