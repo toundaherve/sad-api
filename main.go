@@ -7,20 +7,25 @@ import (
 	"github.com/go-playground/validator"
 	"github.com/gorilla/mux"
 	"github.com/rs/cors"
+	"github.com/toundaherve/sad-api/csvfile"
 	"github.com/toundaherve/sad-api/logger"
 	"github.com/toundaherve/sad-api/onboarding"
-	"github.com/toundaherve/sad-api/postgres"
 	"github.com/toundaherve/sad-api/user"
 )
 
 var Address = ":8001"
+var csvFilename = "users.csv"
 
 func main() {
 	validate := validator.New()
-	postgresDB := postgres.NewPostgresDB()
 	logger := logger.NewLogger()
+	// postgresDB := postgres.NewPostgresDB()
+	csvFile := csvfile.New(csvFilename)
+	// if err := csvFile.InitFile(); err != nil {
+	// 	logger.WithField("filename", csvFilename).Fatalln("Failed to create csvFile Storage")
+	// }
 	onboardingHandler := onboarding.New(nil, logger)
-	userHandler := user.NewUserHandler(validate, postgresDB, logger)
+	userHandler := user.NewUserHandler(validate, csvFile, logger)
 
 	router := mux.NewRouter()
 	router.Methods("GET").Path("/api/onboarding/begin_verification").HandlerFunc(onboardingHandler.BeginVerification)
