@@ -86,11 +86,11 @@ func (o *OnboardingHandler) VerifyCode(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if actualCode != data.Code {
-		respondBadRequest(w, "The verification code is not the right one.")
+		respondCode(w, false, "Wrong code")
 		return
 	}
 
-	respondNoContent(w)
+	respondCode(w, true, "Good code")
 }
 
 func generateCode() int {
@@ -119,4 +119,15 @@ func respondBadRequest(w http.ResponseWriter, msg string) {
 func respondNoContent(w http.ResponseWriter) {
 	w.WriteHeader(http.StatusNoContent)
 	fmt.Fprint(w)
+}
+
+func respondCode(w http.ResponseWriter, valid bool, msg string) {
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(struct {
+		Valid bool   `json:"valid"`
+		Msg   string `json:"msg"`
+	}{
+		Valid: valid,
+		Msg:   msg,
+	})
 }

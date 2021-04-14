@@ -6,6 +6,7 @@ import (
 
 	"github.com/go-playground/validator"
 	"github.com/gorilla/mux"
+	"github.com/rs/cors"
 	"github.com/toundaherve/sad-api/logger"
 	"github.com/toundaherve/sad-api/onboarding"
 	"github.com/toundaherve/sad-api/postgres"
@@ -22,15 +23,16 @@ func main() {
 	userHandler := user.NewUserHandler(validate, postgresDB, logger)
 
 	router := mux.NewRouter()
-	router.Use(CORS)
 	router.Methods("GET").Path("/api/onboarding/begin_verification").HandlerFunc(onboardingHandler.BeginVerification)
 	router.Methods("POST").Path("/api/onboarding/verify_code").HandlerFunc(onboardingHandler.VerifyCode)
 	router.Methods("POST").Path("/api/users").HandlerFunc(userHandler.CreateUser)
 	router.Methods("GET").Path("/api/users/email_available").HandlerFunc(userHandler.CheckEmailAvailable)
 
+	handler := cors.Default().Handler(router)
+
 	srv := http.Server{
+		Handler:      handler,
 		Addr:         Address,
-		Handler:      router,
 		WriteTimeout: 15 * time.Second,
 		ReadTimeout:  15 * time.Second,
 	}
@@ -40,17 +42,17 @@ func main() {
 	}
 }
 
-func CORS(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Access-Control-Allow-Headers:", "*")
-		w.Header().Set("Access-Control-Allow-Origin", "*")
-		w.Header().Set("Access-Control-Allow-Methods", "*")
+// func CORS(next http.Handler) http.Handler {
+// 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+// 		w.Header().Set("Access-Control-Allow-Headers", "*")
+// 		w.Header().Set("Access-Control-Allow-Origin", "*")
+// 		w.Header().Set("Access-Control-Allow-Methods", "*")
 
-		if r.Method == "OPTIONS" {
-			w.WriteHeader(http.StatusOK)
-			return
-		}
+// 		if r.Method == "OPTIONS" {
+// 			w.WriteHeader(http.StatusOK)
+// 			return
+// 		}
 
-		next.ServeHTTP(w, r)
-	})
-}
+// 		next.ServeHTTP(w, r)
+// 	})
+// }
