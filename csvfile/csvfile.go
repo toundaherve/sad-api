@@ -2,6 +2,7 @@ package csvfile
 
 import (
 	"encoding/csv"
+	"io"
 	"os"
 
 	"github.com/toundaherve/sad-api/user"
@@ -49,5 +50,31 @@ func (c *CSVFile) CreateUser(newUser *user.User) error {
 }
 
 func (c *CSVFile) GetUserByEmail(email string) (*user.User, error) {
-	return nil, nil
+	f, err := os.Open(c.Filename)
+	if err != nil {
+		return nil, err
+	}
+	defer f.Close()
+
+	r := csv.NewReader(f)
+
+	for {
+		record, err := r.Read()
+		if err == io.EOF {
+			return nil, nil
+		}
+
+		if err != nil {
+			return nil, err
+		}
+
+		if record[1] == email {
+			return &user.User{
+				Name:    record[0],
+				Email:   record[1],
+				Country: record[2],
+				City:    record[3],
+			}, nil
+		}
+	}
 }
