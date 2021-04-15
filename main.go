@@ -32,6 +32,7 @@ func main() {
 	router.Methods("POST").Path("/api/onboarding/verify_code").HandlerFunc(onboardingHandler.VerifyCode)
 	router.Methods("POST").Path("/api/users").HandlerFunc(userHandler.CreateUser)
 	router.Methods("GET").Path("/api/users/email_available").HandlerFunc(userHandler.CheckEmailAvailable)
+	router.Methods("POST").Path("/api/users/login").HandlerFunc(userHandler.Login)
 
 	handler := cors.Default().Handler(router)
 

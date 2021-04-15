@@ -162,3 +162,49 @@ func respondEmailAvailable(w http.ResponseWriter, resp emailAvailableResponse) {
 func isValidEmail(email string) bool {
 	return true
 }
+
+type credentials struct {
+	Email    string `json:"email"`
+	Password string `json:"password"`
+}
+
+func (h *UserHandler) Login(w http.ResponseWriter, r *http.Request) {
+	var c credentials
+
+	if err := json.NewDecoder(r.Body).Decode(&c); err != nil {
+		respondBadRequest(w, "The data you sent is not json formatted.")
+		return
+	}
+
+	user, err := h.Storage.GetUserByEmail(c.Email)
+	if err != nil {
+		respondInternalServerError(w)
+		h.logger.WithFields(logrus.Fields{
+			"user": c.Email,
+			"err":  err.Error(),
+		}).Warn("Failed to get user in the storage")
+		return
+	}
+
+	if user == nil {
+		respondPasswordMatch(w, false)
+		return
+	}
+
+	if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(c.Password)); err != nil {
+		respondPasswordMatch(w, false)
+		return
+	} else {
+		respondPasswordMatch(w, true)
+		return
+	}
+}
+
+func respondPasswordMatch(w http.ResponseWriter, match bool) {
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(struct {
+		Match bool `json:"match"`
+	}{
+		Match: match,
+	})
+}

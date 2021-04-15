@@ -70,10 +70,11 @@ func (c *CSVFile) GetUserByEmail(email string) (*user.User, error) {
 
 		if record[1] == email {
 			return &user.User{
-				Name:    record[0],
-				Email:   record[1],
-				Country: record[2],
-				City:    record[3],
+				Name:     record[0],
+				Email:    record[1],
+				Country:  record[2],
+				City:     record[3],
+				Password: record[4],
 			}, nil
 		}
 	}
